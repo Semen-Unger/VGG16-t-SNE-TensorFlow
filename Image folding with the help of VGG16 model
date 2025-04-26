@@ -1,0 +1,36 @@
+import tensorflow as tf
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications.vgg16 import preprocess_input
+from tensorflow.keras.preprocessing import image
+import numpy as np
+import matplotlib.pyplot as plt
+#загрузка модели
+model = VGG16(weights='imagenet', include_top=False)
+
+img_path = '/content/drive/MyDrive/Colab Notebooks/hw.jpg'
+
+img = image.load_img(img_path, target_size=(224, 224))
+x = image.img_to_array(img)
+x = np.expand_dims(x, axis=0)
+x = preprocess_input(x)
+
+# Получение результатов свертки для указанных слоев
+layer_names = ['block1_pool', 'block2_pool', 'block3_pool']
+outputs = [model.get_layer(name).output for name in layer_names]
+feature_extraction_model = tf.keras.Model(inputs=model.inputs, outputs=outputs)
+features = feature_extraction_model(x)
+
+# Визуализация результатов свертки
+for i, feature_map in enumerate(features):
+    num_channels = feature_map.shape[-1]
+    num_cols = min(8, num_channels)  # Ограничиваем число столбцов до 8
+    num_rows = num_channels // num_cols + 1
+    fig = plt.figure(figsize=(12, 12))
+    for j in range(num_channels):
+        ax = fig.add_subplot(num_rows, num_cols, j + 1)
+        ax.imshow(feature_map[0, :, :, j], cmap='gray')
+        ax.axis('off')
+    plt.suptitle(f'Layer: {layer_names[i]}')
+    plt.tight_layout()
+    plt.show()
+
